@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⛏️ Belani Solo Mining</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">
+                <span>⛏️</span>
+                <span>Belani Solo Mining</span>
+            </div>
+            <div style="display: flex; align-items: center;">
+                <button class="refresh-btn" onclick="showMainMenu()" style="margin-right: 10px;">
+                    <span>⚙️</span>
+                    <span>Menu</span>
+                </button>
+                <button class="refresh-btn" onclick="refreshData()">
+                    <span>🔄</span>
+                    <span class="countdown">60s</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="content">
+            <div class="loading">Loading mining statistics...</div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification">
+        <div class="notification-title"></div>
+        <div class="notification-body"></div>
+    </div>
+
+    <!-- Load Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Load JavaScript modules in correct order -->
+<script src="js/settings-manager.js"></script>
+<script src="js/bitcoin-price-manager.js"></script>
+<script src="js/mining-analytics-manager.js"></script>
+<script src="js/worker-performance-manager.js"></script>
+<script src="js/mining-activity-manager.js"></script>  <!-- This should be loaded before tab-handlers -->
+<script src="js/mining-stats-app.js"></script>
+<script src="js/app-init.js"></script>
+<script src="js/menu-handlers.js"></script>
+<script src="js/settings-handlers.js"></script>
+<script src="js/notification-handlers.js"></script>
+<script src="js/tab-handlers.js"></script>  <!-- This should be loaded after mining-activity-manager -->
+<script src="js/performance-handlers.js"></script>
+<script src="js/worker-handlers.js"></script>
+<script src="js/debug-utils.js"></script>
+<script src="js/main-ui-handlers.js"></script>
+    </body>
+</html>

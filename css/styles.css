@@ -1,0 +1,299 @@
+/* Main styles.css */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* CSS Variables for theming */
+:root {
+    --accent-color: #f59e0b;
+    --primary-bg: #ffffff;
+    --secondary-bg: #f9fafb;
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --border-color: #e5e7eb;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --info-color: #3b82f6;
+}
+
+/* Dark mode variables */
+body.dark-mode {
+    --primary-bg: #1f2937;
+    --secondary-bg: #374151;
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --border-color: #4b5563;
+}
+
+body.dark-mode {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode .container {
+    background: rgba(31, 41, 55, 0.95);
+    color: var(--text-primary);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.title {
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    margin-left: 10px;
+}
+
+.refresh-btn:hover {
+    background: #5a67d8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.countdown {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+}
+
+.refresh-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.refresh-btn:hover {
+    background: #2563eb;
+}
+
+.activity-timeline {
+    /* Custom scrollbar for activity timeline */
+}
+
+.activity-timeline::-webkit-scrollbar {
+    width: 6px;
+}
+
+.activity-timeline::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.activity-timeline::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.activity-timeline::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+/* ===============================================
+   FINAL ACTIVITY TAB FIX - NO WHITE SPACE
+   Replace your previous CSS with this version
+   =============================================== */
+
+/* Ensure tab panels show/hide correctly */
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    overflow: visible !important;
+}
+
+/* Activity tab specific fixes - ONLY when activity tab is active */
+#activity-tab {
+    min-height: 500px;
+}
+
+#activity-tab.active {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* ONLY apply activity content styling when activity tab is active */
+#activity-tab.active #activity-content {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100%;
+    min-height: 400px;
+    position: relative;
+    z-index: 1;
+}
+
+#activity-tab.active #mining-activity {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100%;
+    min-height: 400px;
+    position: relative;
+    z-index: 1;
+}
+
+/* CRITICAL: Completely hide mining activity when NOT on activity tab */
+#mining-activity {
+    /* Default state - completely hidden */
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    left: -9999px !important;
+}
+
+/* ONLY show mining activity when specifically in active activity tab */
+#activity-tab.active #mining-activity {
+    /* Override the default hidden state */
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    min-height: 400px !important;
+    max-height: none !important;
+    padding: initial !important;
+    margin: initial !important;
+    border: initial !important;
+    overflow: visible !important;
+    position: relative !important;
+    left: auto !important;
+    z-index: 1;
+}
+
+/* Activity items styling - only when in active activity tab */
+#activity-tab.active .activity-item {
+    position: relative;
+    z-index: 1;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Activity timeline - only when in active activity tab */
+#activity-tab.active .activity-timeline {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Remove any transforms that might hide content - only for activity tab */
+#activity-tab.active #activity-content,
+#activity-tab.active #mining-activity {
+    transform: none !important;
+}
+
+/* Activity timeline scrollbar styling */
+.activity-timeline::-webkit-scrollbar {
+    width: 6px;
+}
+
+.activity-timeline::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.activity-timeline::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.activity-timeline::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+/* Ensure no mining activity containers appear in other tabs */
+#analytics-tab #mining-activity,
+#settings-tab #mining-activity,
+#performance-tab #mining-activity,
+.tab-panel:not(#activity-tab) #mining-activity {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    left: -9999px !important;
+    width: 0 !important;
+}
+
+/* Ensure other tab content takes full space */
+#analytics-tab.active #analytics-content,
+#settings-tab.active #settings-content,
+#performance-tab.active #performance-content {
+    width: 100%;
+    height: auto;
+    min-height: 400px;
+}
