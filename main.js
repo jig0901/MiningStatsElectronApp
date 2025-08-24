@@ -46,7 +46,7 @@ function createWindow() {
         
         // Allow navigation to local files and the main API
         if (parsedUrl.protocol === 'file:' || 
-            parsedUrl.hostname === 'www.belanifamily.com' ||
+            parsedUrl.hostname === 'www.yourdomain.com' ||
             navigationUrl === mainWindow.webContents.getURL()) {
             console.log('Allowing main window navigation');
             return; // Allow navigation

@@ -1,7 +1,7 @@
 // Main Mining Stats App - UPDATED WITH MAIN AREA BITCOIN PRICE
 class MiningStatsApp {
     constructor() {
-        this.apiURL = 'https://www.belanifamily.com/metrics';
+        this.apiURL = 'https://www.yourdomain.com/metrics';
         this.refreshInterval = 60;
         this.countdown = this.refreshInterval;
         this.chart = null;
