@@ -1074,10 +1074,12 @@ class MiningStatsApp {
             </div>`;
         }
         
-        cards += `<div class="stat-card">
-            <div class="stat-label">Best Share</div>
+        cards += `<div class="stat-card best-share-highlight">
+            <div class="stat-label">🏆 Best Share</div>
             <div class="stat-value">${this.formatValue(s.best_shares)}</div>
         </div>`;
+
+
         
         // Add accepted shares if available
         if (s.accepted_shares) {

@@ -297,3 +297,29 @@ body.dark-mode .container {
     height: auto;
     min-height: 400px;
 }
+
+.stat-card.best-share-highlight {
+    background: #fef2f2; /* pastel red */
+    padding: 16px;
+    border-radius: 10px;
+    border-left: 4px solid #ef4444; /* curved accent strip */
+    text-align: center;
+    transition: transform 0.15s ease-in-out;
+}
+
+.stat-card.best-share-highlight:hover {
+    transform: translateY(-2px);
+}
+
+.stat-card.best-share-highlight .stat-label {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.stat-card.best-share-highlight .stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ef4444;
+}
