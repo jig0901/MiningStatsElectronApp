@@ -1,5 +1,5 @@
-# ⛏️ {********} Solo Mining — Fleet Dashboard & Analytics  
-![Mining Dashboard](./Screenshot%202025-08-23%20172254.png) 
+# ⛏️ {Your Name} Solo Mining — Fleet Dashboard & Analytics  
+![Mining Dashboard](./Screenshot%202025-08-24%20154802.png) 
 A lightweight, self-hosted **Electron + Web app** to monitor your Bitcoin solo mining fleet.  
 It provides **real-time mining stats, analytics, worker performance tracking, block odds, and activity logging** — all in one dashboard UI.  
 
@@ -191,7 +191,7 @@ MIT — attribution appreciated.
 
 ## 🖼️ Screenshots  
 
-![Mining Dashboard](./Screenshot%202025-08-23%20172254.png)  
+![Mining Dashboard](./Screenshot%202025-08-24%20154802.png)  
 ![Worker Overview](./Screenshot%202025-08-23%20172315.png)  
 ![Worker Performance](./Screenshot%202025-08-24%20140446.png)  
 ![Worker Table](./Screenshot%202025-08-23%20172447.png)  
