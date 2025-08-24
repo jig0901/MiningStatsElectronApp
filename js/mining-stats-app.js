@@ -26,7 +26,7 @@ class MiningStatsApp {
             this.settingsManager = new EnhancedSettingsManager();
             this.bitcoinPriceManager = new BitcoinPriceManager();
             this.analyticsManager = new MiningAnalyticsManager();
-            
+            this.insightsManager = new MetricsInsightsManager();
             // Initialize new managers and assign to global variables
             window.workerPerformanceManager = new WorkerPerformanceManager();
             window.miningActivityManager = new MiningActivityManager();
@@ -105,7 +105,12 @@ class MiningStatsApp {
         try {
             const response = await fetch(this.apiURL);
             const data = await response.json();
-            
+
+             // Update insights early so it’s ready for render
+            if (this.insightsManager) {
+                this.insightsManager.update(data, this.previousStats);
+            }
+
             // Store previous stats before updating
             this.previousStats = this.stats;
             this.stats = data;
@@ -199,6 +204,7 @@ class MiningStatsApp {
             ${this.renderOddsStats()}
             ${this.renderChart()}
             ${this.renderTabbedInterface()}
+            ${this.settingsManager?.settings?.showAdvancedMetrics ? '<div id="metrics-insights"></div>' : ''}
         `;
         
         this.initChart();
@@ -208,15 +214,21 @@ class MiningStatsApp {
         this.updateHeader();
          // Ensure bubbles get a final refresh after layout established
         this.updatePerformanceBubblesInline();
+        // Let Insights Manager render into its container
+        if (this.settingsManager?.settings?.showAdvancedMetrics && this.insightsManager) {
+        this.insightsManager.render('metrics-insights');
+        }
     }
 
     // Top-of-view compact chip host (very small margins)
     renderPerformanceBubblesSection() {
-        return `
+    return `
         <div class="section" style="background:transparent;padding:0;margin:4px 0 8px;">
-            <div id="worker-performance-bubbles-inline"></div>
+        <div id="worker-performance-bubbles-inline"></div>
+        <!-- Bitaxe details drawer lives right below the bubbles -->
+        <div id="bitaxe-viewer" style="display:none;margin-top:8px;"></div>
         </div>
-        `;
+    `;
     }
 
     // Delegate to manager to paint the chip ribbon
@@ -1081,53 +1093,82 @@ class MiningStatsApp {
 
     renderHashrateStats() {
         const s = this.stats;
+        const fmt = (v) => Number(v).toFixed(2);
+
+        // tolerate alternate keys
+        const h1m  = s.hashrate_1min_ths;
+        const h5m  = s.hashrate_5min_ths;
+        const h1h  = s.hashrate_1hr_ths;
+        const h24h = s.hashrate_24hr_ths ?? s.hashrate_24h_ths ?? s.hashrate_24h ?? s.hashrate_24hr ?? s.hashrate_1d_ths;
+        const h7d  = s.hashrate_7d_ths   ?? s.hashrate_7day_ths ?? s.hashrate_7d   ?? s.hashrate_7day;
+
         return `<div class="section">
             <div class="section-title">⚡ Hashrate Overview</div>
             <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-label">Current (1m)</div>
-                    <div class="stat-value">${s.hashrate_1min_ths.toFixed(2)} TH/s</div>
-                </div>
-                ${s.hashrate_5min_ths ? `<div class="stat-card">
-                    <div class="stat-label">Average (5m)</div>
-                    <div class="stat-value">${s.hashrate_5min_ths.toFixed(2)} TH/s</div>
-                </div>` : ''}
-                ${s.hashrate_1hr_ths ? `<div class="stat-card">
-                    <div class="stat-label">Average (1h)</div>
-                    <div class="stat-value">${s.hashrate_1hr_ths.toFixed(2)} TH/s</div>
-                </div>` : ''}
-                ${s.hashrate_24hr_ths ? `<div class="stat-card">
-                    <div class="stat-label">Average (24h)</div>
-                    <div class="stat-value">${s.hashrate_24hr_ths.toFixed(2)} TH/s</div>
-                </div>` : ''}
+            ${typeof h1m === 'number' ? `<div class="stat-card">
+                <div class="stat-label">Current (1m)</div>
+                <div class="stat-value">${fmt(h1m)} TH/s</div>
+            </div>` : ''}
+
+            ${typeof h5m === 'number' ? `<div class="stat-card">
+                <div class="stat-label">Average (5m)</div>
+                <div class="stat-value">${fmt(h5m)} TH/s</div>
+            </div>` : ''}
+
+            ${typeof h1h === 'number' ? `<div class="stat-card">
+                <div class="stat-label">Average (1h)</div>
+                <div class="stat-value">${fmt(h1h)} TH/s</div>
+            </div>` : ''}
+
+            ${h24h != null ? `<div class="stat-card">
+                <div class="stat-label">Average (24h)</div>
+                <div class="stat-value">${fmt(h24h)} TH/s</div>
+            </div>` : ''}
+
+            ${h7d != null ? `<div class="stat-card">
+                <div class="stat-label">Average (7d)</div>
+                <div class="stat-value">${fmt(h7d)} TH/s</div>
+            </div>` : ''}
             </div>
         </div>`;
-    }
+        }
+
 
     renderOddsStats() {
         const s = this.stats;
+        const percent = (p) => this.formatPercent(Number(p));
+
+        const p24h = s.odds_24hr_percent ?? s.odds_24h_percent;
+        const p1w  = s.odds_1wk_percent  ?? s.odds_7d_percent   ?? s.odds_week_percent;
+        const p1m  = s.odds_1mo_percent  ?? s.odds_30d_percent  ?? s.odds_month_percent;
+        const p1y  = s.odds_1yr_percent;
+
         return `<div class="section">
             <div class="section-title">🎲 Block Discovery Odds</div>
             <div class="stats-grid">
-                ${s.odds_24hr_percent ? `<div class="stat-card">
-                    <div class="stat-label">24 Hours</div>
-                    <div class="stat-value">${this.formatPercent(s.odds_24hr_percent)}</div>
-                </div>` : ''}
-                ${s.odds_1wk_percent ? `<div class="stat-card">
-                    <div class="stat-label">1 Week</div>
-                    <div class="stat-value">${this.formatPercent(s.odds_1wk_percent)}</div>
-                </div>` : ''}
-                ${s.odds_1mo_percent ? `<div class="stat-card">
-                    <div class="stat-label">1 Month</div>
-                    <div class="stat-value">${this.formatPercent(s.odds_1mo_percent)}</div>
-                </div>` : ''}
-                <div class="stat-card">
-                    <div class="stat-label">1 Year</div>
-                    <div class="stat-value">${this.formatPercent(s.odds_1yr_percent)}</div>
-                </div>
+            ${p24h != null ? `<div class="stat-card">
+                <div class="stat-label">24 Hours</div>
+                <div class="stat-value">${percent(p24h)}</div>
+            </div>` : ''}
+
+            ${p1w != null ? `<div class="stat-card">
+                <div class="stat-label">1 Week</div>
+                <div class="stat-value">${percent(p1w)}</div>
+            </div>` : ''}
+
+            ${p1m != null ? `<div class="stat-card">
+                <div class="stat-label">1 Month</div>
+                <div class="stat-value">${percent(p1m)}</div>
+            </div>` : ''}
+
+            ${p1y != null ? `<div class="stat-card">
+                <div class="stat-label">1 Year</div>
+                <div class="stat-value">${percent(p1y)}</div>
+            </div>` : ''}
             </div>
         </div>`;
-    }
+        }
+
 
     renderChart() {
         return `<div class="section">
@@ -1293,10 +1334,325 @@ class MiningStatsApp {
             }
         }
 
+        // With this:
         if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(title, { body, icon: '⛏️' });
+        // If you have a real image URL, use: { body, icon: '/favicon.ico' }
+        new Notification(title, { body });
         }
     }
+
+    // ---------- Bitaxe Modal: styles + scaffolding ----------
+    ensureBitaxeModalStyles() {
+    if (document.getElementById('bitaxe-modal-styles')) return;
+    const css = `
+    .bitaxe-modal__overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,.45);
+        display: none; align-items: center; justify-content: center; z-index: 9999;
+        backdrop-filter: blur(2px);
+    }
+    .bitaxe-modal__dialog {
+        width: min(100vw - 24px, 1000px);
+        max-height: calc(100vh - 24px);
+        background: #fff; border-radius: 12px; overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0,0,0,.25);
+        display: flex; flex-direction: column;
+    }
+    .bitaxe-modal__hdr {
+        display:flex; align-items:center; justify-content:space-between;
+        padding: 12px 14px; border-bottom: 1px solid #e5e7eb; gap: 10px;
+    }
+    .bitaxe-modal__title { font-weight: 700; }
+    .bitaxe-modal__body {
+        padding: 12px; overflow: auto;
+    }
+    .bitaxe-modal__actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .refresh-btn {
+        background: #2563eb; color: #fff; border: 0; padding: 8px 12px; border-radius: 8px;
+        cursor: pointer; font-weight: 600;
+    }
+    .refresh-btn:hover { filter: brightness(0.95); }
+    .refresh-btn.gray { background:#6b7280; }
+    .bitaxe-badge { font-size:12px;color:#6b7280; }
+    `;
+    const style = document.createElement('style');
+    style.id = 'bitaxe-modal-styles';
+    style.textContent = css;
+    document.head.appendChild(style);
+    }
+
+    getOrCreateBitaxeModal() {
+    this.ensureBitaxeModalStyles();
+    let overlay = document.getElementById('bitaxe-modal');
+    if (overlay) return overlay;
+
+    overlay = document.createElement('div');
+    overlay.id = 'bitaxe-modal';
+    overlay.className = 'bitaxe-modal__overlay';
+    overlay.innerHTML = `
+        <div class="bitaxe-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="bitaxe-modal-title">
+        <div class="bitaxe-modal__hdr">
+            <div class="bitaxe-modal__title" id="bitaxe-modal-title">Bitaxe</div>
+            <div class="bitaxe-modal__actions">
+            <button class="refresh-btn" id="bitaxe-modal-refresh">Refresh</button>
+            <a class="refresh-btn" id="bitaxe-modal-open" target="_blank" rel="noreferrer">Open UI</a>
+            <button class="refresh-btn gray" id="bitaxe-modal-close">Close</button>
+            </div>
+        </div>
+        <div class="bitaxe-modal__body" id="bitaxe-modal-body"></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    // Close behaviors
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) this.closeBitaxeModal();
+    });
+    document.getElementById('bitaxe-modal-close').onclick = () => this.closeBitaxeModal();
+    document.addEventListener('keydown', (e) => {
+        if (overlay.style.display === 'flex' && e.key === 'Escape') this.closeBitaxeModal();
+    });
+
+    return overlay;
+    }
+
+    openBitaxeModal({ title, baseUrl }) {
+    const overlay = this.getOrCreateBitaxeModal();
+    document.getElementById('bitaxe-modal-title').textContent = title || 'Bitaxe';
+    const openLink = document.getElementById('bitaxe-modal-open');
+    openLink.style.display = baseUrl ? '' : 'none';
+    if (baseUrl) openLink.href = baseUrl;
+
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    }
+
+    closeBitaxeModal() {
+    const overlay = document.getElementById('bitaxe-modal');
+    if (!overlay) return;
+    overlay.style.display = 'none';
+    document.body.style.overflow = '';
+    const body = document.getElementById('bitaxe-modal-body');
+    if (body) body.innerHTML = '';
+    }
+
+
+    // ---------- Bitaxe Modal: workflow ----------
+    onWorkerClick(workerName, evt) {
+    if (evt) evt.stopPropagation();
+    const isBitaxe = /bitaxe/i.test(workerName);
+    if (isBitaxe) {
+        this.showBitaxeModal(workerName);
+    } else {
+        // keep existing fallback behavior if you had one (e.g., navigate to performance tab)
+        if (this.navigateToPerformanceTabWithFilter) {
+        this.navigateToPerformanceTabWithFilter('all');
+        }
+    }
+    }
+
+    async showBitaxeModal(workerName) {
+    // Use your saved mapping if present; fallback to localStorage "workerUrls"
+    if (!this.workerUrls) {
+        this.workerUrls =
+        (typeof this.loadWorkerUrlsFromStorage === 'function'
+            ? this.loadWorkerUrlsFromStorage()
+            : JSON.parse(localStorage.getItem('workerUrls') || '{}')) || {};
+    }
+
+    const baseUrl = this.workerUrls?.[workerName] || '';
+    this.openBitaxeModal({ title: `🪓 ${workerName}`, baseUrl });
+    this.renderBitaxeLoadingModal(workerName, baseUrl);
+
+    // hook up refresh button each time
+    const refreshBtn = document.getElementById('bitaxe-modal-refresh');
+    if (refreshBtn) refreshBtn.onclick = () => this.showBitaxeModal(workerName);
+
+    if (!baseUrl) {
+        this.renderBitaxeMissingUrlModal(workerName);
+        return;
+    }
+
+    try {
+        const info = await this.fetchBitaxeInfo(baseUrl);
+        this.renderBitaxeModalContent(workerName, info, baseUrl);
+    } catch (err) {
+        this.renderBitaxeErrorModal(workerName, baseUrl, err);
+    }
+    }
+
+    async fetchBitaxeInfo(baseUrl) {
+    let url = (baseUrl || '').trim();
+    if (!/^https?:\/\//i.test(url)) url = 'http://' + url;
+    const endpoint = url.replace(/\/+$/,'') + '/api/system/info';
+    const res = await fetch(endpoint, { method: 'GET' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+    }
+
+    // ---------- Bitaxe Modal: renders ----------
+    renderBitaxeLoadingModal(workerName, baseUrl) {
+    const body = document.getElementById('bitaxe-modal-body');
+    if (!body) return;
+    body.innerHTML = `
+        <div style="color:#6b7280;">Fetching from <code>${baseUrl || '— (no URL saved)'}</code> …</div>
+    `;
+    }
+
+    renderBitaxeMissingUrlModal(workerName) {
+        const body = document.getElementById('bitaxe-modal-body');
+        if (!body) return;
+
+        body.innerHTML = `
+            <div style="display:flex;flex-direction:column;gap:10px;">
+            <div>No URL saved for <strong>${workerName}</strong>. Enter the Bitaxe base URL or IP (e.g., <code>http://10.0.0.42</code>).</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <input id="bitaxe-url-input" type="text" placeholder="http://10.x.x.x"
+                    style="flex:1;min-width:220px;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
+                <button class="refresh-btn" id="bitaxe-url-save">Save & Open</button>
+            </div>
+            </div>
+        `;
+
+        // Hide the "Open UI" link until we have a URL
+        const openLink = document.getElementById('bitaxe-modal-open');
+        if (openLink) openLink.style.display = 'none';
+
+        // Bind click handler safely (no quoting problems)
+        const saveBtn = document.getElementById('bitaxe-url-save');
+        if (saveBtn) {
+            saveBtn.onclick = () => {
+            const input = document.getElementById('bitaxe-url-input');
+            if (!input || !input.value) return;
+
+            if (!this.workerUrls) this.workerUrls = {};
+            this.workerUrls[workerName] = input.value.trim();
+
+            if (typeof this.saveWorkerUrlsToStorage === 'function') {
+                this.saveWorkerUrlsToStorage();
+            } else {
+                localStorage.setItem('workerUrls', JSON.stringify(this.workerUrls));
+            }
+            this.showBitaxeModal(workerName);
+            };
+        }
+    }
+
+
+    renderBitaxeErrorModal(workerName, baseUrl, err) {
+    const body = document.getElementById('bitaxe-modal-body');
+    if (!body) return;
+    const msg = (err && (err.message || err.toString())) || 'Unknown error';
+    body.innerHTML = `
+        <div style="background:#fff;border:1px solid #fee2e2;border-left:4px solid #ef4444;border-radius:10px;padding:12px;">
+        <div style="font-weight:700;margin-bottom:6px;">Failed to load ${workerName}</div>
+        <div style="color:#b91c1c;margin-bottom:8px;">${msg} from <code>${baseUrl}</code></div>
+        <div style="font-size:12px;color:#6b7280;">
+            If blocked by CORS, open the device UI directly or use a simple reverse proxy that sets
+            <code>Access-Control-Allow-Origin</code>.
+        </div>
+        <div style="margin-top:10px;">
+            <button class="refresh-btn" onclick="window.app.showBitaxeModal(${JSON.stringify(workerName)})">Retry</button>
+        </div>
+        </div>
+    `;
+    }
+
+    renderBitaxeModalContent(workerName, info, baseUrl) {
+    const body = document.getElementById('bitaxe-modal-body');
+    if (!body) return;
+
+    const num = (v)=> (v===0 || v) ? v : '-';
+    const asV = (v)=> (v>100 ? (v/1000).toFixed(2) : Number(v).toFixed(2)); // mV→V if needed
+    const uptime = this.formatSeconds(info.uptimeSeconds||0);
+    const hr = info.hashRate || 0;
+    const ex = info.expectedHashrate || 0;
+    const eff = ex>0 ? (hr/ex)*100 : null;
+    const effBadge = eff!==null ? `${eff.toFixed(1)}%` : '—';
+    const fans = (info.autofanspeed ? 'Auto' : 'Manual') + ` @ ${num(info.fanspeed)}%`;
+    const poolUser = (info.stratumUser||'').split('.').slice(-1)[0] || info.hostname || workerName;
+
+    // Update header actions "Open UI" after we know baseUrl correctness
+    const openLink = document.getElementById('bitaxe-modal-open');
+    if (openLink) {
+        openLink.style.display = '';
+        openLink.href = baseUrl;
+    }
+
+    body.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="bitaxe-badge">${info.hostname||''} • ${info.version||info.axeOSVersion||''}</div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;">
+        <div style="background:#f9fafb;border-radius:10px;padding:12px;border-left:4px solid #3b82f6;">
+            <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">HASHRATE</div>
+            <div style="font-weight:700;">${hr.toFixed(1)} MH/s</div>
+            <div style="font-size:12px;color:#6b7280;">Expected: ${ex ? ex.toFixed(1) : '—'} MH/s</div>
+            <div style="margin-top:8px;height:8px;background:#e5e7eb;border-radius:9999px;overflow:hidden;">
+            <div style="width:${Math.min(100, eff||0)}%;height:100%;background:#3b82f6;"></div>
+            </div>
+            <div style="font-size:12px;margin-top:6px;">Efficiency: <strong>${effBadge}</strong></div>
+        </div>
+
+        <div style="background:#f9fafb;border-radius:10px;padding:12px;border-left:4px solid #ef4444;">
+            <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">THERMALS</div>
+            <div>Chip: <strong>${num(info.temp)}°C</strong> • VRM: <strong>${num(info.vrTemp)}°C</strong></div>
+            <div>Fan: <strong>${fans}</strong> ${info.fanrpm ? `• ${num(info.fanrpm)} rpm` : ''}</div>
+            <div>${info.overheat_mode ? '🔥 Overheat mode active' : ''}</div>
+        </div>
+
+        <div style="background:#f9fafb;border-radius:10px;padding:12px;border-left:4px solid #10b981;">
+            <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">POWER</div>
+            <div>Power: <strong>${num(info.power)} W</strong></div>
+            <div>Voltage: <strong>${asV(info.voltage)} V</strong> (Nominal ${asV(info.nominalVoltage||5)} V)</div>
+            <div>Current: <strong>${num(info.current)}</strong> mA</div>
+        </div>
+
+        <div style="background:#f9fafb;border-radius:10px;padding:12px;border-left:4px solid #f59e0b;">
+            <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">WIFI</div>
+            <div>SSID: <strong>${info.ssid||'-'}</strong> • RSSI: <strong>${num(info.wifiRSSI)}</strong> dBm</div>
+            <div>Status: ${info.wifiStatus||'-'} ${info.apEnabled? '• AP enabled':''}</div>
+            <div>MAC: ${info.macAddr||'-'}</div>
+        </div>
+
+        <div style="background:#f9fafb;border-radius:10px;padding:12px;border-left:4px solid #111827;">
+            <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">POOL</div>
+            <div>${info.stratumURL||'-'}:${info.stratumPort||'-'}</div>
+            <div>User: <code style="font-size:12px;">${poolUser}</code></div>
+            <div>Diff: ${num(info.poolDifficulty)} • Resp: ${num(info.responseTime)} ms</div>
+            <div>${info.isUsingFallbackStratum? 'Using fallback' : ''}</div>
+        </div>
+
+        <div style="background:#f9fafb;border-radius:10px;padding:12px;border-left:4px solid #6b7280;">
+            <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">SESSION</div>
+            <div>Uptime: <strong>${uptime}</strong></div>
+            <div>Shares: <strong>${num(info.sharesAccepted)}</strong> ✅ / <strong>${num(info.sharesRejected)}</strong> ❌</div>
+            <div>Best: ${info.bestSessionDiff||info.bestDiff||'-'}</div>
+            <div style="font-size:12px;color:#6b7280;margin-top:6px;">
+            ${Array.isArray(info.sharesRejectedReasons) && info.sharesRejectedReasons.length
+                ? 'Rejects: ' + info.sharesRejectedReasons.map(r=>`${r.message} (${r.count})`).join(', ')
+                : ''}
+            </div>
+        </div>
+
+        <div style="background:#f9fafb;border-radius:10px;padding:12px;border-left:4px solid #3b82f6;">
+            <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">FIRMWARE / CLOCK</div>
+            <div>FW: ${info.axeOSVersion || info.version || '-'}</div>
+            <div>IDF: ${info.idfVersion || '-'}</div>
+            <div>Board: ${info.boardVersion || '-'}</div>
+            <div>Freq: ${num(info.frequency)} MHz • Core V: ${num(info.coreVoltageActual||info.coreVoltage)} mV ${info.overclockEnabled?'• OC':''}</div>
+        </div>
+        </div>
+    `;
+    }
+
+    formatSeconds(sec) {
+    const s = Math.max(0, Math.floor(sec||0));
+    const h = Math.floor(s/3600);
+    const m = Math.floor((s%3600)/60);
+    const r = s%60;
+    return `${h}h ${m}m ${r}s`;
+    }
+
 }
 
 // Initialize the app when DOM is ready
@@ -1305,7 +1661,9 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         app = new MiningStatsApp();
         window.app = app;
-        
+        // Allow markup to call handleWorkerClick from tables/cards
+        window.handleWorkerClick = (name, evt) => window.app?.onWorkerClick?.(name, evt);
+
         // Add global debug functions
         window.debugBitcoinPrice = function() {
             console.log('=== BITCOIN PRICE DEBUG ===');
@@ -1601,7 +1959,9 @@ if (document.readyState === 'loading') {
 } else {
     app = new MiningStatsApp();
     window.app = app;
-    
+    // Allow markup to call handleWorkerClick from tables/cards
+    window.handleWorkerClick = (name, evt) => window.app?.onWorkerClick?.(name, evt);
+
     // Add global debug functions for immediate load
     window.debugBitcoinPrice = function() {
         console.log('=== BITCOIN PRICE DEBUG ===');

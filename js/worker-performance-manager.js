@@ -330,7 +330,16 @@ class WorkerPerformanceManager {
             <div class="performance-card ${worker.status === 'warning' ? 'warning' : ''}" 
                  style="background: white; border-radius: 8px; padding: 16px; border: 1px solid #e5e7eb; border-left: 4px solid ${statusColor};">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <h4 style="margin: 0; font-size: 14px; font-weight: 600;">${worker.name}</h4>
+                    <h4 style="margin:0;font-size:14px;font-weight:600;">
+                    <span onclick="handleWorkerClick('${worker.name}', event)" 
+                            style="cursor:pointer;text-decoration:underline;text-underline-offset:2px;">
+                        ${worker.name}
+                    </span>
+                    </h4>
+                    ${/bitaxe/i.test(worker.name) ? `
+                    <button class="refresh-btn" style="margin:0 0 0 8px;padding:4px 8px;font-size:12px;"
+                            onclick="handleWorkerClick('${worker.name}', event)">🔎 Bitaxe</button>
+                    ` : ''}
                     <div style="width: 8px; height: 8px; border-radius: 50%; background: ${statusColor};"></div>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
