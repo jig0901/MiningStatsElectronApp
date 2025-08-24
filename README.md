@@ -1,4 +1,4 @@
-# ⛏️ Belani Solo Mining — Fleet Dashboard & Analytics  
+# ⛏️ {********} Solo Mining — Fleet Dashboard & Analytics  
 ![Mining Dashboard](./Screenshot%202025-08-23%20172254.png) 
 A lightweight, self-hosted **Electron + Web app** to monitor your Bitcoin solo mining fleet.  
 It provides **real-time mining stats, analytics, worker performance tracking, block odds, and activity logging** — all in one dashboard UI.  
